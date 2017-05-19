@@ -8,6 +8,9 @@ from openpyxl.styles import PatternFill
 from datetime import datetime
 import exifread
 import random
+from urllib2 import urlopen
+import json
+import io
 
 kleine_kaartjes = [None,None,None,None,None,None,None,None,None,None,None,None]  #12 keer None
 grote_kaartjes = [[],[],[],[],[],[],[],[],[],[],[],[]]                         #12 keer []
@@ -16,6 +19,7 @@ grote_kaartjes_aantal_fotos = []
 aantal_fotos_array = [10, 20, 30, 50, 100]
 minimum_links = 1.0
 minimum_rechts = 1.0
+
 
 def mount_usb(screen, screen_w, screen_h, my_font):
     if os.path.exists("/dev/sda1"):
@@ -38,6 +42,33 @@ def mount_usb(screen, screen_w, screen_h, my_font):
             break
         time.sleep(0.05)
 
+def import_fotos(screen, screen_w, screen_h):
+    url = "https://steps-upload.herokuapp.com/group/oma1/photos"
+    try:
+        response = urlopen(url)
+    except urllib2.HTTPError:
+        print("internet error")
+        return
+    json_obj = json.load(response)
+
+    for i in json_obj:
+        print(i)
+        for photo in json_obj[i]:
+            print(photo["_id"])
+            print(photo["name"])
+            print(photo["url"])
+            try:
+                image_str = urlopen(photo["url"]).read()
+            except urllib2.HTTPError:
+                print("foto niet gevonden")
+                break
+            image_file = io.BytesIO(image_str)
+            print(image_file)
+            foto = pygame.image.load(image_file)
+            screen.blit(foto, (0,0))
+            pygame.display.update()
+            time.sleep(1)
+            
 def init_sensors():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -83,9 +114,12 @@ def init_steps():
     screen, screen_w, screen_h = init_pygame_and_screen()
     check_screen(screen_w, screen_h)
     my_font = init_variables(screen_h)
+    
     mount_usb(screen, screen_w, screen_h, my_font)
-    datalogger, datalogger_sheet = datalogger_init()
     foto_generator = fotos_laden(screen_w, screen_h)
+
+    
+    datalogger, datalogger_sheet = datalogger_init()
     kaartjes_scalen(screen_w, screen_h)
     kaartjes_scalen_aantal_fotos(screen_w, screen_h, my_font)
     return sensors, screen, screen_w, screen_h, my_font, datalogger, datalogger_sheet, foto_generator

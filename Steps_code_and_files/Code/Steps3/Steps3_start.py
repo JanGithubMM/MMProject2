@@ -1,6 +1,8 @@
 from Steps3_functions import *
 
 sensors, screen, screen_w, screen_h, my_font, datalogger, datalogger_sheet, foto_generator = init_steps()
+import_fotos(screen, screen_w, screen_h)
+
 oefening_chosen, aantal_fotos = menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected = 0, welcome = True)
 
 while True:
