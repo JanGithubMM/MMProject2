@@ -111,16 +111,25 @@ def check_screen(screen_w, screen_h):
         pygame.quit()
         sys.exit(0)
 
+def play_music(sort_music):
+    if(sort_music == "menu"):
+        pygame.mixer.music.load("/home/pi/Steps_code_and_files/Audio/111dhbzdhdz.mp3")   #MENU
+        pygame.mixer.music.set_volume(0.2)
+    elif(sort_music == "oefening"):
+        pygame.mixer.music.load("/home/pi/Steps_code_and_files/Audio/392252__setuniman__smart-1p10.wav")   #OEFENING
+        pygame.mixer.music.set_volume(0.4)
+        
+    pygame.mixer.music.play(-1,0)
+
 def init_steps():
     sensors = init_sensors()
     screen, screen_w, screen_h = init_pygame_and_screen()
     check_screen(screen_w, screen_h)
     my_font = init_variables(screen_h)
-    
+    play_music("menu")
     mount_usb(screen, screen_w, screen_h, my_font)
-    import_fotos(screen, screen_w, screen_h, my_font)
+    #import_fotos(screen, screen_w, screen_h, my_font)      ONLINE
     foto_generator = fotos_laden(screen_w, screen_h)
-    #foto_generator = import_fotos(screen_w, screen_h)    
     datalogger, datalogger_sheet = datalogger_init()
     kaartjes_scalen(screen_w, screen_h)
     kaartjes_scalen_aantal_fotos(screen_w, screen_h, my_font)
@@ -130,26 +139,27 @@ def init_steps():
 def fotos_laden(screen_w, screen_h):           #fotos inladen en schalen
     screen_ratio = ((screen_w*(4/5)) / screen_h)
     usb_stick_has_no_photos = True
-    for file in os.listdir("/home/pi/Foto_album"):
-        if file_is_image(file):
-            usb_stick_has_no_photos = False
-            image = pygame.image.load("/home/pi/Foto_album/"+file)
-            image = rotate_image("/home/pi/Foto_album/"+file, image)
-            #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
-            image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
-            yield image
 
-##      USBSTICK
-            
-##    for file in os.listdir("/home/pi/usbdrv"):
+##      ONLINE
+##    for file in os.listdir("/home/pi/Foto_album"):
 ##        if file_is_image(file):
 ##            usb_stick_has_no_photos = False
-##            image = pygame.image.load("/home/pi/usbdrv/"+file)
-##            image = rotate_image("/home/pi/usbdrv/"+file, image)
+##            image = pygame.image.load("/home/pi/Foto_album/"+file)
+##            image = rotate_image("/home/pi/Foto_album/"+file, image)
 ##            #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
 ##            image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
 ##            yield image
+##      ONLINE
 
+##      USBSTICK            
+    for file in os.listdir("/home/pi/usbdrv"):
+        if file_is_image(file):
+            usb_stick_has_no_photos = False
+            image = pygame.image.load("/home/pi/usbdrv/"+file)
+            image = rotate_image("/home/pi/usbdrv/"+file, image)
+            #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
+            image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
+            yield image
 ##      USBSTICK
             
     if (usb_stick_has_no_photos):
@@ -218,7 +228,10 @@ def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, 
     oefeningNumber = 0
     
     #Audio Init
+    play_music("menu")
     welkom_audio = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/welkom_bij_steps.wav")
+    #welkom_audio = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/new_bleep.wav")
+    
     #goed_gedaan1 = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/goed_gedaan.wav")
     #goed_gedaan2 = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/10_keer_gedaan_goed_werk.wav")
     #goed_gedaan3 = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/goed_bezig.wav")
@@ -400,9 +413,9 @@ def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, 
 def oefening_steps(init_info, oefening_chosen, aantal_fotos):
     sensors, screen, screen_w, screen_h, my_font, foto_generator = init_info
     s_l, s_r = sensors
-    houding1_audio, houding2_audio = init_audio(oefening_chosen)
+    houding1_audio, houding2_audio, well_done = init_audio(oefening_chosen)
     achtergrond = set_achtergrond(screen, screen_w, screen_h)
-    
+    play_music("oefening")
     foto_generator, photo = select_volgende_foto(foto_generator, screen_w, screen_h)   #selecteerde de eerste foto, omdat deze functie nog niet eerder aangeroepen is.
 
     oefening = Oefening(oefening_chosen, screen_w, screen_h)
@@ -412,11 +425,12 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
 
     fase = 1        #De oefeningen starten allemaal in fase 1
     houding = 1     #De oefeningen starten allemaal in houding 1
-    pygame.mixer.Sound.play(houding1_audio)
+    #pygame.mixer.Sound.play(houding1_audio)
     random_x = set_random(screen_w)
     random_y = set_random(screen_h)
     fout_counter = 0
-    fout_totaal = 200
+    fout_totaal_reset = 40
+    fout_totaal = fout_totaal_reset
     teller = 0
     photo_pos_x = 0
     #pygame.draw.rect(screen, (255,255,255),(screen_part_pos_x-50,screen_part_pos_y-50,photo.get_width()+100,photo.get_height()+100))
@@ -430,9 +444,9 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
 
         #print(fase, s_l.value, s_r.value)
         time.sleep(0.01)
+        print(fase, fout_counter, fout_totaal)
         if(fase == 1):      #houding 1 aanhouden
             set_houding(screen, screen_w, screen_h, achtergrond, 1, oefening)  #afgebeelde houding aanpassen als nodig
-
             if(oefening.check_houding(oefening_chosen, houding, s_l, s_r)):      #hieruit komt een True of False
                 photo_pos_x = set_photo(screen, photo, screen_w, screen_h, teller, oefening.teller_totaal, random_x, random_y)
                 #print(photo_pos_x)
@@ -443,7 +457,7 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
                 if fout_counter > fout_totaal:
                     play_sound(houding1_audio)
                     fout_counter = 0
-                    fout_totaal += 50
+                    fout_totaal += 100
             if(photo_pos_x >= photo.get_width()):         #houding 1 afgerond
                 uitvoeringen_gedaan = verhoog_aantal_uitvoeringen(screen, achtergrond, screen_w, screen_h, uitvoeringen_gedaan, uitvoeringen_totaal, my_font)
                 vorige_photo = photo
@@ -456,9 +470,15 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
                 houding = 2         #wisselen naar houding 2
                 teller = 0
                 photo_pos_x = 0
+                fout_totaal = fout_totaal_reset
+                play_sound(well_done)
                 fase = 2
-                play_sound(houding2_audio)
         elif(fase == 2):    #wisselen naar houding 2
+            fout_counter += 0.5
+            if fout_counter > fout_totaal:
+                play_sound(houding2_audio)
+                fout_counter = 0
+                fout_totaal += 100
             #iets dat de gebruiker attendeert om te wisselen van houding
             if(oefening.check_houding(oefening_chosen, houding, s_l, s_r)):      #hieruit komt een True of False
                 pygame.mixer.stop()
@@ -466,6 +486,7 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
                 set_blurred_achtergrond_photo(screen, vorige_photo, screen_w, screen_h, vorige_random_x, vorige_random_y)
                 set_lijst(screen, photo, screen_w, screen_h, random_x, random_y)
                 set_blurred_achtergrond_photo(screen, photo, screen_w, screen_h, random_x, random_y)
+                fout_totaal = fout_totaal_reset
                 fase = 3
         elif(fase == 3):    #houding 2 aanhouden
             set_houding(screen, screen_w, screen_h, achtergrond, 2, oefening)  #afgebeelde houding aanpassen als nodig
@@ -479,7 +500,7 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
                 if fout_counter > fout_totaal:
                     play_sound(houding2_audio)
                     fout_counter = 0
-                    fout_totaal += 50
+                    fout_totaal += 100
                     
             if(photo_pos_x >= photo.get_width()):         #houding 2 afgerond
                 uitvoeringen_gedaan = verhoog_aantal_uitvoeringen(screen, achtergrond, screen_w, screen_h, uitvoeringen_gedaan, uitvoeringen_totaal, my_font)
@@ -493,9 +514,15 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
                 houding = 1         #wisselen naar houding 1
                 teller = 0
                 photo_pos_x = 0
+                fout_totaal = fout_totaal_reset
+                play_sound(well_done)
                 fase = 4
-                play_sound(houding1_audio)
         elif(fase == 4):    #wisselen naar houding 1
+            fout_counter += 0.5
+            if fout_counter > fout_totaal:
+                play_sound(houding1_audio)
+                fout_counter = 0
+                fout_totaal += 100
             #iets dat de gebruiker attendeert om te wisselen van houding
             if(oefening.check_houding(oefening_chosen, houding, s_l, s_r)):      #hieruit komt een True of False
                 pygame.mixer.stop()
@@ -503,6 +530,7 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
                 set_blurred_achtergrond_photo(screen, vorige_photo, screen_w, screen_h, vorige_random_x, vorige_random_y)
                 set_lijst(screen, photo, screen_w, screen_h, random_x, random_y)
                 set_blurred_achtergrond_photo(screen, photo, screen_w, screen_h, random_x, random_y)
+                fout_totaal = fout_totaal_reset
                 fase = 1
 
     pygame.mixer.stop()
@@ -862,6 +890,7 @@ def set_sensor_info(screen, achtergrond, oefening, oefening_chosen, houding, s_l
     
 
 def init_audio(oefening_chosen):
+    pygame.mixer.init()
     if(oefening_chosen == 0):
         houding1_audio = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/strek_linkerbeen.wav")
         houding2_audio = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/strek_rechterbeen.wav")
@@ -898,7 +927,9 @@ def init_audio(oefening_chosen):
     elif(oefening_chosen == 11):
         houding1_audio = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/tik_rechter_step.wav")
         houding2_audio = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/tik_linker_step.wav")
-    return houding1_audio, houding2_audio
+
+    well_done = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/new_bleep.wav")
+    return houding1_audio, houding2_audio, well_done
 
 def play_sound(houding_audio):
     #time.sleep(1)
