@@ -20,6 +20,8 @@ grote_kaartjes_aantal_fotos = []
 aantal_fotos_array = [10, 20, 30, 50, 100]
 minimum_links = 1.0
 minimum_rechts = 1.0
+maximum_links = 0.6
+maximum_rechts = 0.6
 
 
 def mount_usb(screen, screen_w, screen_h, my_font):
@@ -444,7 +446,8 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
 
         #print(fase, s_l.value, s_r.value)
         time.sleep(0.01)
-        print(fase, fout_counter, fout_totaal)
+        #print(s_l.value, minimum_links, s_r.value, minimum_rechts)
+        #print(fase, fout_counter, fout_totaal)
         if(fase == 1):      #houding 1 aanhouden
             set_houding(screen, screen_w, screen_h, achtergrond, 1, oefening)  #afgebeelde houding aanpassen als nodig
             if(oefening.check_houding(oefening_chosen, houding, s_l, s_r)):      #hieruit komt een True of False
@@ -769,18 +772,16 @@ class Oefening:
             self.image_houding2 = pygame.transform.scale(self.image_houding2, (int(screen_w/100)*14, int(screen_w/100)*20))
     def check_houding(self, oefening_chosen, houding, s_l, s_r):
         if(houding == 1):
-            s_trigger_links = 0.1       #Standaard waarde
-            s_trigger_rechts = 0.1      #Standaard waarde
+            s_trigger_links = 0.02       #Standaard waarde
+            s_trigger_rechts = 0.02      #Standaard waarde
             s_trigger_total = 0.6       #Standaard waarde
             
             if(oefening_chosen == 0):       #knie extensie
                 return(s_l_read(s_l.value) < s_trigger_links and s_r_read(s_r.value) > s_trigger_rechts)
             elif(oefening_chosen == 1):     #van links naar rechts leunen naar grond
-                s_trigger_links = 0.05
-                s_trigger_rechts = 0.05
                 return(s_l_read(s_l.value) < s_trigger_links and s_r_read(s_r.value) > s_trigger_rechts)
             elif(oefening_chosen == 2):     #naar voren leunen
-                s_trigger_total = 0.6
+                s_trigger_total = 0.5
                 return(s_l_read(s_l.value) + s_r_read(s_r.value) > s_trigger_total)
             elif(oefening_chosen == 3):     #knien optillen
                 return(s_l_read(s_l.value) < s_trigger_links and s_r_read(s_r.value) > s_trigger_rechts)
@@ -792,7 +793,7 @@ class Oefening:
             elif(oefening_chosen == 6):     #staanzitten
                 s_trigger_links = 0.2
                 s_trigger_rechts = 0.2
-                s_trigger_total = 0.8
+                s_trigger_total = 1.2
                 return(s_l_read(s_l.value) + s_r_read(s_r.value) > s_trigger_total)# and s_r_read(s_r.value) < s_trigger_rechts and s_l_read(s_l.value) < s_trigger_links)
             elif(oefening_chosen == 7):     #achterenlopen
                 s_trigger_total = s_l_read(s_l.value) + s_r_read(s_r.value)
@@ -806,16 +807,18 @@ class Oefening:
             elif(oefening_chosen == 11):    #handen tikken
                 return(s_l_read(s_l.value) < s_trigger_links and s_r_read(s_r.value) > s_trigger_rechts)
         elif(houding == 2):
-            s_trigger_links = 0.1
-            s_trigger_rechts = 0.1
+            s_trigger_links = 0.02
+            s_trigger_rechts = 0.02
+            s_trigger_total = 0.6       #Standaard waarde
+            
             if(oefening_chosen == 0):       #knie extensie
+                s_trigger_links = 0.03
+                s_trigger_rechts = 0.03
                 return(s_l_read(s_l.value) > s_trigger_links and s_r_read(s_r.value) < s_trigger_rechts)
             elif(oefening_chosen == 1):     #van links naar rechts leunen naar grond
-                s_trigger_links = 0.05
-                s_trigger_rechts = 0.05
                 return(s_l_read(s_l.value) > s_trigger_links and s_r_read(s_r.value) < s_trigger_rechts)
             elif(oefening_chosen == 2):     #naar voren leunen
-                s_trigger_total = 0.6
+                s_trigger_total = 0.5
                 return(s_l_read(s_l.value) + s_r_read(s_r.value) < s_trigger_total)
             elif(oefening_chosen == 3):     #knien optillen
                 return(s_l_read(s_l.value) > s_trigger_links and s_r_read(s_r.value) < s_trigger_rechts)
@@ -827,7 +830,7 @@ class Oefening:
             elif(oefening_chosen == 6):     #staanzitten
                 s_trigger_links = 0.2
                 s_trigger_rechts = 0.2
-                s_trigger_total = 0.8
+                s_trigger_total = 1.2
                 return(s_l_read(s_l.value) + s_r_read(s_r.value) < s_trigger_total)# and s_r_read(s_r.value) > s_trigger_rechts and s_l_read(s_l.value) > s_trigger_links)
             elif(oefening_chosen == 7):     #achterenlopen
                 s_trigger_total = s_l_read(s_l.value) + s_r_read(s_r.value)
@@ -853,34 +856,25 @@ def set_houding(screen, screen_w, screen_h, achtergrond, houding, oefening):
     pygame.display.update()
 
 def set_sensor_info(screen, achtergrond, oefening, oefening_chosen, houding, s_l, s_r, screen_h, screen_w):
-        
-    ### schalend maken op het scherm!!  ###
-    #breedte = screen_w/5
-    #hoogte = screen_h*(2/5)
-    #x = 0
-    #y = screen_h*(2/5)
-    
-    #hoogte_sensor_links = math.floor(s_l_read(s_l.value) * 100)
-    #hoogte_sensor_rechts = math.floor(s_r_read(s_r.value) * 100)
-
     hoogte_sensor_links = s_l_read(s_l.value) * (screen_h*(2/5))
     hoogte_sensor_rechts = s_r_read(s_r.value) * (screen_h*(2/5))
-
+    
 ##    if(oefening.check_houding(oefening_chosen, houding, s_l, s_r)):
 ##        kleur_sensor = (50,255,50)
 ##    else:
 ##        kleur_sensor = (255,50,50)
 
     kleur_sensor = (248,220,29) #beige
-        
-    screen.blit(achtergrond, (0,screen_h*(2/5)), area=[0,screen_h*(2/5),screen_w*(1/5),screen_h*(2/5)])
+    
+    
     #voetstap_links = pygame.image.load("/home/pi/Downloads/Voetstap_links.png")
     #voetstap_links = scale_binnen_grenzen(voetstap_links, screen_w*(1/10), screen_h*(2/5), smooth=False)
     #screen.blit(voetstap_links, (0,screen_h*(2/5)))
-    
-    if(hoogte_sensor_links > 10):
+
+    screen.blit(achtergrond, (0,screen_h*(2/5)), area=[0,screen_h*(2/5),screen_w*(1/5),screen_h*(2/5)])
+    if(hoogte_sensor_links > screen_h*(2/5)/35):
         pygame.draw.rect(screen,(kleur_sensor),(screen_w*(1/50),math.floor(screen_h*(4/5))-hoogte_sensor_links,screen_w*(3/50),hoogte_sensor_links))
-    if(hoogte_sensor_rechts > 10):
+    if(hoogte_sensor_rechts > screen_h*(2/5)/35):
         pygame.draw.rect(screen,(kleur_sensor),(screen_w*(6/50),math.floor(screen_h*(4/5))-hoogte_sensor_rechts,screen_w*(3/50),hoogte_sensor_rechts))
     pygame.display.update((0,screen_h*(2/5),screen_w*(1/5),screen_h*(2/5)))
 
@@ -942,19 +936,30 @@ def check_keys():
             pygame.quit()
             sys.exit(0)
 
-def s_r_read(value):
-    global minimum_rechts
-    minimum_rechts = minimum_rechts + (minimum_rechts/2500)     #om te voorkomen dat er 1 keer een lage waarde wordt gemeten.
-    if value < minimum_rechts:
-        minimum_rechts = value
-    return (value - minimum_rechts)
-
 def s_l_read(value):
-    global minimum_links
-    minimum_links = minimum_links + (minimum_links/2500)        #om te voorkomen dat er 1 keer een lage waarde wordt gemeten.
+    global minimum_links, maximum_links
+    minimum_links = minimum_links + (minimum_links+0.05)/2000        #om te voorkomen dat er 1 keer een lage waarde wordt gemeten.
+    if(maximum_links > 0.6):
+        maximum_links = maximum_links - (maximum_links+0.05)/2000     #om te voorkomen dat er 1 keer een hoge waarde wordt gemeten.
+    
     if value < minimum_links:
         minimum_links = value
-    return (value - minimum_links)
+    if (value > maximum_links):
+        maximum_links = value
+    print((value - minimum_links)/maximum_links)
+    return ((value - minimum_links)/maximum_links)
+
+def s_r_read(value):
+    global minimum_rechts, maximum_rechts
+    minimum_rechts = minimum_rechts + (minimum_rechts+0.05)/2000     #om te voorkomen dat er 1 keer een lage waarde wordt gemeten.
+    if(maximum_rechts > 0.6):
+        maximum_rechts = maximum_rechts - (maximum_rechts+0.05)/2000     #om te voorkomen dat er 1 keer een hoge waarde wordt gemeten.
+
+    if value < minimum_rechts:
+        minimum_rechts = value
+    if (value > maximum_rechts):
+        maximum_rechts = value
+    return ((value - minimum_rechts)/maximum_rechts)
 
 def scale_binnen_grenzen(image, vak_w, vak_h, smooth=False):
     vak_ratio = vak_w/vak_h
