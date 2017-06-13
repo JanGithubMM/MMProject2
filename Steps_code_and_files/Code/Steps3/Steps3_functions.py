@@ -13,8 +13,8 @@ import urllib2
 import json
 import io
 
-kleine_kaartjes = [None,None,None,None,None,None,None,None,None,None,None,None]  #12 keer None
-grote_kaartjes = [[],[],[],[],[],[],[],[],[],[],[],[]]                         #12 keer []
+kleine_kaartjes = [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]  #15 keer None
+grote_kaartjes = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]                         #15 keer []
 kleine_kaartjes_aantal_fotos = []
 grote_kaartjes_aantal_fotos = []
 aantal_fotos_array = [10, 20, 30, 50, 100]
@@ -134,6 +134,8 @@ def init_steps():
     foto_generator = fotos_laden(screen_w, screen_h)
     datalogger, datalogger_sheet = datalogger_init()
     kaartjes_scalen(screen_w, screen_h)
+    print(grote_kaartjes)
+    print(kleine_kaartjes)
     kaartjes_scalen_aantal_fotos(screen_w, screen_h, my_font)
     return sensors, screen, screen_w, screen_h, my_font, datalogger, datalogger_sheet, foto_generator
 
@@ -194,7 +196,7 @@ def rotate_image(file_path, image):
     return image
 
 def kaartjes_scalen(screen_w, screen_h):
-    aantalOefeningen = 12
+    aantalOefeningen = 15
     for file in os.listdir("/home/pi/Steps_code_and_files/Images/Kaartjes_Steps3"):
             if file.endswith(".png")|file.endswith(".PNG"):
                     raw_kaartje = pygame.image.load("/home/pi/Steps_code_and_files/Images/Kaartjes_Steps3/"+file)
@@ -223,7 +225,12 @@ def kaartjes_scalen_aantal_fotos(screen_w, screen_h, my_font):
         leeg_kaartje.blit(aantal_fotos_text,(leeg_kaartje.get_width()/2-aantal_fotos_text.get_width()/2,leeg_kaartje.get_height()/2-aantal_fotos_text.get_height()/2,))
         kleine_kaartjes_aantal_fotos.append(leeg_kaartje)
 
-def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, welcome):
+def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, aantal_fotos, oefening_pakket, welcome):
+
+    if (len(oefening_pakket) > 0):          #voor het oefening_pakket
+        oefening_chosen = oefening_pakket.pop()
+        return oefening_chosen, aantal_fotos, oefening_pakket
+
     s_l, s_r = sensors
     sensor_trigger = 0.1
     x = oefening_selected
@@ -409,7 +416,10 @@ def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, 
             aantal_fotos = x
             break
 
-    return oefening_chosen, aantal_fotos_array[aantal_fotos], 
+    oefening_pakket = oefening_pakket_kiezen(oefening_chosen) #als de gebruiker een oefening_pakket heeft gekozen.
+    if (len(oefening_pakket) > 0):
+        oefening_chosen = oefening_pakket.pop()
+    return oefening_chosen, aantal_fotos_array[aantal_fotos], oefening_pakket
 
 
 def oefening_steps(init_info, oefening_chosen, aantal_fotos):
@@ -946,7 +956,6 @@ def s_l_read(value):
         minimum_links = value
     if (value > maximum_links):
         maximum_links = value
-    print((value - minimum_links)/maximum_links)
     return ((value - minimum_links)/maximum_links)
 
 def s_r_read(value):
@@ -1342,4 +1351,16 @@ def oefening_uitleg(screen, screen_w, screen_h, my_font, oefening_chosen):
         time.sleep(plaatsing_audio.get_length()/2 /100)
         if (GPIO.input(4) == 1):
             pygame.mixer.stop()
-            
+
+
+def oefening_pakket_kiezen(oefening_chosen):
+    if(oefening_chosen <= 11):
+        return []
+    elif(oefening_chosen == 12):
+        oefening_pakket = [5,4,3,2,1,0]
+    elif(oefening_chosen == 13):
+        oefening_pakket = [10,9,8,7,6]
+    elif(oefening_chosen == 14):
+        oefening_pakket = [3,6,1,9,4]
+
+    return oefening_pakket
