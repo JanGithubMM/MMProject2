@@ -155,7 +155,8 @@ def fotos_laden(screen_w, screen_h):           #fotos inladen en schalen
 ##            yield image
 ##      ONLINE
 
-##      USBSTICK            
+##      USBSTICK
+
     for file in os.listdir("/home/pi/usbdrv"):
         if file_is_image(file):
             usb_stick_has_no_photos = False
@@ -360,6 +361,7 @@ def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, 
             klaar_counter += 1
         else:
             klaar_counter = 0
+    
 
     opdracht_text = my_font.render("Kies het aantal foto's dat u wilt kijken", 1, (0,0,0))
     opdracht_text = scale_binnen_grenzen(opdracht_text, screen_w*(4/5), screen_h/10, smooth=True)
@@ -422,7 +424,7 @@ def menu_steps(sensors, screen, screen_w, screen_h, my_font, oefening_selected, 
     return oefening_chosen, aantal_fotos_array[aantal_fotos], oefening_pakket
 
 
-def oefening_steps(init_info, oefening_chosen, aantal_fotos):
+def oefening_steps(init_info, oefening_chosen, aantal_fotos, oefening_pakket):
     sensors, screen, screen_w, screen_h, my_font, foto_generator = init_info
     s_l, s_r = sensors
     houding1_audio, houding2_audio, well_done = init_audio(oefening_chosen)
@@ -567,19 +569,20 @@ def oefening_steps(init_info, oefening_chosen, aantal_fotos):
         screen.blit(goed_gedaan_text,(screen_w/2-goed_gedaan_text.get_width()/2,screen_h*(2/5)-goed_gedaan_text.get_height()))
         goed_gedaan1 = pygame.mixer.Sound("/home/pi/Steps_code_and_files/Audio/goed_gedaan.wav")
         pygame.mixer.Sound.play(goed_gedaan1)
-    
-    opdracht_extra_text = my_font.render("Ga nu met beide benen van de Steps af.", 1, (0,0,0))
-    opdracht_extra_text = scale_binnen_grenzen(opdracht_extra_text, screen_w*(9/10), screen_h*(1/5), smooth=True)
-    screen.blit(opdracht_extra_text,(screen_w/2-opdracht_extra_text.get_width()/2,screen_h*(3/5)-opdracht_extra_text.get_height()))
-    pygame.display.update()
-    
-    klaar_counter = 0
-    while(klaar_counter < 30):
-        time.sleep(0.1)
-        if(s_l_read(s_l.value) < 0.1 and s_r_read(s_r.value) <  0.1):
-            klaar_counter += 1
-        else:
-            klaar_counter = 0
+
+    if (len(oefening_pakket) == 0):    
+        opdracht_extra_text = my_font.render("Ga nu met beide benen van de Steps af.", 1, (0,0,0))
+        opdracht_extra_text = scale_binnen_grenzen(opdracht_extra_text, screen_w*(9/10), screen_h*(1/5), smooth=True)
+        screen.blit(opdracht_extra_text,(screen_w/2-opdracht_extra_text.get_width()/2,screen_h*(3/5)-opdracht_extra_text.get_height()))
+        pygame.display.update()
+        
+        klaar_counter = 0
+        while(klaar_counter < 30):
+            time.sleep(0.1)
+            if(s_l_read(s_l.value) < 0.1 and s_r_read(s_r.value) <  0.1):
+                klaar_counter += 1
+            else:
+                klaar_counter = 0
     return oefening_result
 
 def set_photo(screen, photo, screen_w, screen_h, teller, teller_totaal, random_x, random_y):
@@ -772,12 +775,12 @@ class Oefening:
             #self.image_houding2 = scale_binnen_grenzen(self.image_houding2, screen_w/5, screen_h*(2/5),smooth=True)
             self.image_houding2 = pygame.transform.smoothscale(self.image_houding2, (int(screen_w/100)*14, int(screen_w/100)*20))
         elif(oefening_chosen == 11):
-            self.teller_totaal = 10
+            self.teller_totaal = 3
             self.aantal_uitvoeringen = 10
-            self.image_houding1 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/0a_test.png")        #aanpasbare afbeelding
+            self.image_houding1 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/21a_Oefeningen_met_handen.png")        #aanpasbare afbeelding
             #self.image_houding1 = scale_binnen_grenzen(self.image_houding1, screen_w/5, screen_h*(2/5), smooth=True)
             self.image_houding1 = pygame.transform.scale(self.image_houding1, (int(screen_w/100)*14, int(screen_w/100)*20))
-            self.image_houding2 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/0b_test.png")        #aanpasbare afbeelding
+            self.image_houding2 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/21b_Oefeningen_met_handen.png")        #aanpasbare afbeelding
             #self.image_houding2 = scale_binnen_grenzen(self.image_houding2, screen_w/5, screen_h*(2/5),smooth=True)
             self.image_houding2 = pygame.transform.scale(self.image_houding2, (int(screen_w/100)*14, int(screen_w/100)*20))
     def check_houding(self, oefening_chosen, houding, s_l, s_r):
@@ -1308,12 +1311,9 @@ def oefening_uitleg(screen, screen_w, screen_h, my_font, oefening_chosen):
     elif(oefening_chosen == 11):
         #image
         opdracht_text = my_font.render("Tikken met handen", 1, (0,0,0))
-        instructie_1 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/0a_test.png")        #aanpasbare afbeelding
+        instructie_1 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/21a_Oefeningen_met_handen.png")        #aanpasbare afbeelding
         instructie_1 = scale_binnen_grenzen(instructie_1, screen_w/3, screen_h*(3/5), smooth=False)
-        instructie_2 = pygame.image.load("/home/pi/Steps_code_and_files/Images/Oefeningen/0b_test.png")        #aanpasbare afbeelding
-        instructie_2 = scale_binnen_grenzen(instructie_2, screen_w/3, screen_h*(3/5), smooth=False)
-        screen.blit(instructie_1, (screen_w*(2/6)-instructie_1.get_width()/2,screen_h/2-instructie_1.get_height()/2))
-        screen.blit(instructie_2, (screen_w*(4/6)-instructie_2.get_width()/2,screen_h/2-instructie_2.get_height()/2))
+        screen.blit(instructie_1, (screen_w*(3/6)-instructie_1.get_width()/2,screen_h/2-instructie_1.get_height()/2))
         #image
         
         plaatsing_achtergrond = pygame.image.load("/home/pi/Steps_code_and_files/Images/Menu_en_uitleg/Instructie_StepsNaastStoel.png")
@@ -1357,9 +1357,9 @@ def oefening_pakket_kiezen(oefening_chosen):
     if(oefening_chosen <= 11):
         return []
     elif(oefening_chosen == 12):
-        oefening_pakket = [5,4,3,2,1,0]
+        oefening_pakket = [5,4,3,2,0]
     elif(oefening_chosen == 13):
-        oefening_pakket = [10,9,8,7,6]
+        oefening_pakket = [10,9,7,6]
     elif(oefening_chosen == 14):
         oefening_pakket = [3,6,1,9,4]
 
