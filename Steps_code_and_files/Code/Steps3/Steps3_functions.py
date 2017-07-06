@@ -23,6 +23,9 @@ minimum_rechts = 1.0
 maximum_links = 0.6
 maximum_rechts = 0.6
 
+online_fotos = False
+familie = "593fd3be102e870011cb96b9"
+token = "1BDLZGcWlg0Va0fAWaFvPKlZlhRloM"
 
 def mount_usb(screen, screen_w, screen_h, my_font):
     if os.path.exists("/dev/sda1"):
@@ -44,6 +47,7 @@ def mount_usb(screen, screen_w, screen_h, my_font):
             os.system("sudo mount /dev/sda1 /home/pi/usbdrv")
             break
         time.sleep(0.05)
+        #print("mount usb")
 
 def import_fotos(screen, screen_w, screen_h, my_font):
 
@@ -52,24 +56,55 @@ def import_fotos(screen, screen_w, screen_h, my_font):
     screen.blit(achtergrond, (0,0))
     opdracht_text = my_font.render("Fotos worden geladen", 1, (0,0,0))
     opdracht_text = scale_binnen_grenzen(opdracht_text, screen_w*(8/10), screen_h*(1/5), smooth=True)
-    screen.blit(opdracht_text,(screen_w/2-opdracht_text.get_width()*(1/2),screen_h*(1/2)-opdracht_text.get_height()))
+    screen.blit(opdracht_text,(screen_w/2-opdracht_text.get_width()*(1/2),screen_h*(2/5)-opdracht_text.get_height()))
     pygame.display.update()
     
-    url = "https://steps-upload.herokuapp.com/group/oma1/photos"
+    #url = "https://steps-upload.herokuapp.com/group/oma1/photos"
+    #url = "https://steps-upload.herokuapp.com/api/group/593fd3be102e870011cb96b9/updatedPhotos?token=1BDLZGcWlg0Va0fAWaFvPKlZlhRloM"
+    url = "https://steps-upload.herokuapp.com/api/group/" + familie + "/updatedPhotos?token=" + token
     try:
         response = urllib2.urlopen(url)
-    except urllib2.HTTPError:
+    except urllib2.URLError:
         print("internet error")
+        info_text = my_font.render("Check uw internetverbinding en start opnieuw op", 1, (0,0,0))
+        info_text = scale_binnen_grenzen(info_text, screen_w*(5/10), screen_h*(1/8), smooth=True)
+        screen.blit(info_text,(screen_w/2-info_text.get_width()*(1/2),screen_h*(3/5)-info_text.get_height()))
+        pygame.display.update()
         return
     json_obj = json.load(response)
 
+    info_text = my_font.render("U heeft %d nieuwe fotos" % len(json_obj["updated_photos"]), 1, (0,0,0))
+    info_text = scale_binnen_grenzen(info_text, screen_w*(5/10), screen_h*(1/8), smooth=True)
+    screen.blit(info_text,(screen_w/2-info_text.get_width()*(1/2),screen_h*(3/5)-info_text.get_height()))
+    pygame.display.update()
+
+    update_photos(json_obj)
+    #delete_photos(json_obj)
+
+def update_photos(json_obj):
     for foto in json_obj["updated_photos"]:
-        #print(foto["_id"])
-        #print(foto["name"])
-        #print(foto["url"])
+        print(foto["_id"])
+        #print(foto["extension"])
         try:
-            urllib.urlretrieve(foto["url"], "/home/pi/Foto_album/" + foto["url"].rsplit('/',1)[1])
-        except urllib.HTTPError:
+            imported_foto = urllib2.urlopen(foto["path"])
+            #output = open("/home/pi/Foto_album/" + foto["name"].rsplit('/',1)[1],"wb")
+            #output = open("/home/pi/Foto_album/" + foto["_id"] + foto["extension"],"wb")
+            output = open("/home/pi/Foto_album/" + foto["name"],"wb")
+            output.write(imported_foto.read())
+            output.close()
+        except urllib2.URLError:
+            print("foto niet gevonden")
+            break
+
+def delete_photos(json_obj):
+    for foto in json_obj["deleted_photos"]:
+        print(foto["_id"])
+        #print(foto["extension"])
+        try:
+            deleted_foto = urllib2.urlopen(foto["path"])
+            #os.remove("/home/pi/Foto_album/" + foto["_id"] + foto["extension"])
+            os.remove("/home/pi/Foto_album/" + foto["name"])
+        except urllib2.URLError:
             print("foto niet gevonden")
             break
             
@@ -94,7 +129,8 @@ def init_pygame_and_screen():  #pygame en screen init
 
 def init_variables(screen_h):
     #my_font = pygame.font.SysFont("Arial", int(screen_h/10))
-    my_font = pygame.font.Font("/home/pi/Steps_code_and_files/Fonts/Ruler Stencil Regular.ttf", int(screen_h/10))
+    #my_font = pygame.font.Font("/home/pi/Steps_code_and_files/Fonts/Ruler Stencil Regular.ttf", int(screen_h/10))
+    my_font = pygame.font.SysFont("Trebuchet", int(screen_h/5))
     return my_font
 
 def datalogger_init():
@@ -120,7 +156,6 @@ def play_music(sort_music):
     elif(sort_music == "oefening"):
         pygame.mixer.music.load("/home/pi/Steps_code_and_files/Audio/392252__setuniman__smart-1p10.wav")   #OEFENING
         pygame.mixer.music.set_volume(0.4)
-        
     pygame.mixer.music.play(-1,0)
 
 def init_steps():
@@ -129,53 +164,89 @@ def init_steps():
     check_screen(screen_w, screen_h)
     my_font = init_variables(screen_h)
     play_music("menu")
-    mount_usb(screen, screen_w, screen_h, my_font)
-    #import_fotos(screen, screen_w, screen_h, my_font)      ONLINE
-    foto_generator = fotos_laden(screen_w, screen_h)
+    if online_fotos:
+        import_fotos(screen, screen_w, screen_h, my_font)      #ONLINE
+        foto_generator = imported_fotos_laden(screen_w, screen_h)
+    else:
+        mount_usb(screen, screen_w, screen_h, my_font)
+        foto_generator = fotos_laden(screen_w, screen_h, first_time = True)
     datalogger, datalogger_sheet = datalogger_init()
     kaartjes_scalen(screen_w, screen_h)
-    print(grote_kaartjes)
-    print(kleine_kaartjes)
     kaartjes_scalen_aantal_fotos(screen_w, screen_h, my_font)
     return sensors, screen, screen_w, screen_h, my_font, datalogger, datalogger_sheet, foto_generator
 
 
-def fotos_laden(screen_w, screen_h):           #fotos inladen en schalen
+def imported_fotos_laden(screen_w, screen_h):           #fotos inladen en schalen
+    screen_ratio = ((screen_w*(4/5)) / screen_h)
+    imported_fotos_has_no_photos = True
+
+##      ONLINE  in map "Foto_album"
+    for file in os.listdir("/home/pi/Foto_album"):
+        if file_is_image(file):
+            imported_fotos_has_no_photos = False
+            image = pygame.image.load("/home/pi/Foto_album/"+file)
+            image = rotate_image("/home/pi/Foto_album/"+file, image)
+            #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
+            image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
+            yield image
+##      ONLINE  in map "Foto_album"
+            
+    if (imported_fotos_has_no_photos):
+        for file in os.listdir("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos"):
+            if file.endswith(".png")|file.endswith(".PNG")|file.endswith(".jpg")|file.endswith(".JPG")|file.endswith(".jpeg")|file.endswith(".JPEG"):
+                image = pygame.image.load("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos/"+file)
+                image = rotate_image("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos/"+file, image)
+                #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
+                image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
+                yield image
+
+def fotos_laden(screen_w, screen_h, first_time = False):           #fotos inladen en schalen
     screen_ratio = ((screen_w*(4/5)) / screen_h)
     usb_stick_has_no_photos = True
-
-##      ONLINE
-##    for file in os.listdir("/home/pi/Foto_album"):
-##        if file_is_image(file):
-##            usb_stick_has_no_photos = False
-##            image = pygame.image.load("/home/pi/Foto_album/"+file)
-##            image = rotate_image("/home/pi/Foto_album/"+file, image)
-##            #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
-##            image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
-##            yield image
-##      ONLINE
-
+    first_photo_index = 0
+    
+    if first_time:
+        if (os.path.isfile("/home/pi/usbdrv/last_photo.txt")):
+            f = open("/home/pi/usbdrv/last_photo.txt", 'r')
+            first_photo = f.read()
+            f.close()
+            i = 0
+            for file in os.listdir("/home/pi/usbdrv"):
+                print(i, file, first_photo, (file != first_photo))
+                if(file == first_photo):
+                    first_photo_index = i
+                    break
+                else:
+                    i += 1
+                    continue
+    print("test")
+    
 ##      USBSTICK
-
-    for file in os.listdir("/home/pi/usbdrv"):
+    for file in os.listdir("/home/pi/usbdrv")[first_photo_index:]:
         if file_is_image(file):
             usb_stick_has_no_photos = False
             image = pygame.image.load("/home/pi/usbdrv/"+file)
             image = rotate_image("/home/pi/usbdrv/"+file, image)
             #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
             image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
+            set_last_photo(str(file))
             yield image
 ##      USBSTICK
-            
-    if (usb_stick_has_no_photos):
-            for file in os.listdir("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos"):
-                    if file.endswith(".png")|file.endswith(".PNG")|file.endswith(".jpg")|file.endswith(".JPG")|file.endswith(".jpeg")|file.endswith(".JPEG"):
-                            image = pygame.image.load("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos/"+file)
-                            image = rotate_image("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos/"+file, image)
-                            #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
-                            image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
-                            yield image
 
+    if (usb_stick_has_no_photos):
+        for file in os.listdir("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos"):
+            if file.endswith(".png")|file.endswith(".PNG")|file.endswith(".jpg")|file.endswith(".JPG")|file.endswith(".jpeg")|file.endswith(".JPEG"):
+                image = pygame.image.load("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos/"+file)
+                image = rotate_image("/home/pi/Steps_code_and_files/Images/Voorbeeldfotos/"+file, image)
+                #image = scale_binnen_grenzen(image, screen_w*(4/5), screen_h)
+                image = scale_binnen_grenzen(image, screen_w*(1304/1920), screen_h*(886/1080), smooth=True)
+                yield image
+
+def set_last_photo(file_name):
+    f = open("/home/pi/usbdrv/last_photo.txt", 'w')
+    f.write(file_name)
+    f.close
+    
 def file_is_image(file):
     return file.endswith(".png")|file.endswith(".PNG")|file.endswith(".jpg")|file.endswith(".JPG")|file.endswith(".jpeg")|file.endswith(".JPEG")|file.endswith(".gif")|file.endswith(".GIF")|file.endswith(".bmp")|file.endswith(".BMP")|file.endswith(".pcx")|file.endswith(".PCX")|file.endswith(".tga")|file.endswith(".TGA")|file.endswith(".tif")|file.endswith(".TIF")|file.endswith(".lbm")|file.endswith(".LBM")|file.endswith(".pbm")|file.endswith(".PBM")|file.endswith(".pgm")|file.endswith(".PGM")|file.endswith(".ppm")|file.endswith(".PPM")|file.endswith(".xpm")|file.endswith(".XPM")
 
@@ -663,11 +734,14 @@ def set_achtergrond(screen, screen_w, screen_h):
 
 def select_volgende_foto(foto_generator, screen_w, screen_h):
     try:
-            volgende_foto = foto_generator.next()
+        volgende_foto = foto_generator.next()
     except StopIteration:
+        if online_fotos:
+            foto_generator = imported_fotos_laden(screen_w, screen_h)
+        else:
             foto_generator = fotos_laden(screen_w, screen_h)
-            #foto_generator = import_fotos(screen_w, screen_h)
-            volgende_foto = foto_generator.next()
+        #foto_generator = import_fotos(screen_w, screen_h)
+        volgende_foto = foto_generator.next()
 
     #photo_pos_x = math.ceil((screen_w*(3/5))-(volgende_foto.get_width()/2))
     return foto_generator, volgende_foto
@@ -1351,7 +1425,6 @@ def oefening_uitleg(screen, screen_w, screen_h, my_font, oefening_chosen):
         time.sleep(plaatsing_audio.get_length()/2 /100)
         if (GPIO.input(4) == 1):
             pygame.mixer.stop()
-
 
 def oefening_pakket_kiezen(oefening_chosen):
     if(oefening_chosen <= 11):

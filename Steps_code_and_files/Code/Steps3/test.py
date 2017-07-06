@@ -1,9 +1,24 @@
 #test
+import os
 import pygame
 
 pygame.init()
 
 print("init")
+index = 0
+test = ["a", "b", "c", "d", "e", "f", "g", "h"]
 
-pygame.mixer.music.load("/home/pi/Steps_code_and_files/Audio/393320__truword__night-on-long-island.mp3")
-pygame.mixer.music.play(-1,0)
+print(len(test))
+
+i = 0
+for letter in test:
+    if(letter == "h"):
+        index = i
+        break
+    else:
+        i += 1
+        continue
+
+for letter in test[index:]:
+    print(letter)
+
